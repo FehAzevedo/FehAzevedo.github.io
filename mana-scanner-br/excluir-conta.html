@@ -5,6 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Excluir conta — Mana Scanner BR</title>
   <link rel="stylesheet" href="../style.css">
+  <style>
+    .box { border: 1px solid color-mix(in srgb, var(--muted) 40%, transparent); border-radius: 14px; padding: 20px; margin: 20px 0; }
+    .box p { margin: 0 0 14px; }
+    button { font: inherit; font-weight: 700; border: 0; border-radius: 10px; padding: 12px 18px; cursor: pointer; margin: 0 8px 8px 0; }
+    button:disabled { opacity: 0.6; cursor: default; }
+    .primary { background: var(--accent); color: var(--bg); }
+    .danger { background: #c62828; color: #fff; }
+    .plain { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    .ok { color: #2e7d32; font-weight: 700; }
+    .err { color: #c62828; font-weight: 700; }
+    [hidden] { display: none !important; }
+  </style>
 </head>
 <body>
 <main>
@@ -13,7 +25,25 @@
   <p class="muted">Última atualização: 19 de outubro de 2026</p>
 
   <p>A conta do <strong>Mana Scanner BR</strong> é opcional e serve apenas para guardar os seus fichários na nuvem.
-  Você pode excluí-la a qualquer momento, pelo app ou por e-mail.</p>
+  Você pode excluí-la a qualquer momento: aqui mesmo, pelo app ou por e-mail.</p>
+
+  <h2>Excluir por esta página</h2>
+  <div class="box" id="web">
+    <noscript><p class="err">Ative o JavaScript para excluir por esta página, ou use uma das outras opções abaixo.</p></noscript>
+    <div id="signedOut" hidden>
+      <p>Entre com a mesma conta Google usada no app.</p>
+      <button class="primary" id="signIn">Entrar com o Google</button>
+    </div>
+    <div id="signedIn" hidden>
+      <p>Conectado como <strong id="email"></strong>.</p>
+      <p>Excluir a conta apaga todos os fichários guardados na nuvem. Isso não pode ser desfeito.</p>
+      <label><input type="checkbox" id="confirm"> Entendi e quero excluir a minha conta</label>
+      <p></p>
+      <button class="danger" id="delete" disabled>Excluir conta</button>
+      <button class="plain" id="signOut">Sair</button>
+    </div>
+    <p id="status" role="status" aria-live="polite"></p>
+  </div>
 
   <h2>Pelo app</h2>
   <ol>
@@ -21,10 +51,9 @@
     <li>Toque em <strong>Excluir conta</strong> e confirme.</li>
     <li>Entre de novo com a conta Google, se o app pedir, para confirmar que é você.</li>
   </ol>
-  <p>A exclusão é feita na hora.</p>
 
-  <h2>Sem o app</h2>
-  <p>Se não tiver mais o app instalado, envie um e-mail para
+  <h2>Por e-mail</h2>
+  <p>Envie um e-mail para
   <a href="mailto:felipejogosgamesoficial@gmail.com?subject=Excluir%20conta%20-%20Mana%20Scanner%20BR">felipejogosgamesoficial@gmail.com</a>
   com o assunto <strong>"Excluir conta"</strong>, a partir do mesmo e-mail da conta Google usada no app. A conta e os dados
   são excluídos em até 30 dias, e você recebe uma confirmação por e-mail.</p>
@@ -39,5 +68,111 @@
 
   <p><a href="privacidade.html">Política de Privacidade</a></p>
 </main>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
+  import {
+    getAuth, GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo, signOut, deleteUser, inMemoryPersistence,
+    setPersistence,
+  } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
+  import {
+    getFirestore, collection, getDocs, writeBatch,
+  } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+
+  // As mesmas configurações públicas do app (src/lib/firebaseConfig.ts).
+  const app = initializeApp({
+    apiKey: 'AIzaSyDek91ll31vaPeCNDzeQ4cdvmyzda4JCzk',
+    authDomain: 'mana-scanner-br.firebaseapp.com',
+    projectId: 'mana-scanner-br',
+    appId: '1:387167438579:web:be3d229cb8ae7098255986',
+  });
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  // Não guarda o login no navegador: fechou a página, saiu.
+  await setPersistence(auth, inMemoryPersistence).catch(() => {});
+
+  const $ = (id) => document.getElementById(id);
+  const status = (text, kind = '') => { $('status').textContent = text; $('status').className = kind; };
+  let busy = false;
+
+  const render = (user) => {
+    $('signedOut').hidden = Boolean(user);
+    $('signedIn').hidden = !user;
+    if (user) $('email').textContent = user.email ?? '';
+    $('confirm').checked = false;
+    $('delete').disabled = true;
+  };
+  render(null);
+
+  const message = (e) => {
+    switch (e?.code) {
+      case 'auth/popup-closed-by-user':
+      case 'auth/cancelled-popup-request':
+        return 'Login cancelado.';
+      case 'auth/popup-blocked':
+        return 'O navegador bloqueou a janela do Google. Permita pop-ups para esta página e tente de novo.';
+      case 'auth/network-request-failed':
+        return 'Sem conexão. Verifique a internet e tente de novo.';
+      case 'auth/requires-recent-login':
+        return 'Por segurança, saia, entre de novo e tente excluir outra vez.';
+      default:
+        return 'Não foi possível concluir. Tente de novo ou peça a exclusão por e-mail (abaixo).';
+    }
+  };
+
+  $('signIn').onclick = async () => {
+    if (busy) return;
+    busy = true;
+    status('');
+    try {
+      const result = await signInWithPopup(auth, new GoogleAuthProvider());
+      // Entrar com o Google cria a conta quando ela não existe. Se foi criada agora, é porque não havia
+      // conta do app com esse e-mail: desfaz na hora, para não deixar uma conta vazia para trás.
+      if (getAdditionalUserInfo(result)?.isNewUser) {
+        const email = result.user.email ?? 'esse e-mail';
+        await deleteUser(result.user).catch(() => signOut(auth));
+        render(null);
+        status(`Não existe conta do Mana Scanner BR com ${email}. Nada foi guardado.`, 'err');
+        return;
+      }
+      render(result.user);
+    } catch (e) {
+      status(message(e), 'err');
+    } finally {
+      busy = false;
+    }
+  };
+
+  $('signOut').onclick = () => { status(''); signOut(auth); render(null); };
+  $('confirm').onchange = (e) => { $('delete').disabled = !e.target.checked; };
+
+  $('delete').onclick = async () => {
+    const user = auth.currentUser;
+    if (!user || busy) return;
+    busy = true;
+    $('delete').disabled = true;
+    $('signOut').disabled = true;
+    status('Excluindo…');
+    try {
+      // Mesma ordem do app: primeiro os fichários (as regras exigem estar logado), depois a conta.
+      const snap = await getDocs(collection(db, 'users', user.uid, 'binders'));
+      // Um lote do Firestore aceita até 500 operações.
+      for (let i = 0; i < snap.docs.length; i += 450) {
+        const batch = writeBatch(db);
+        for (const d of snap.docs.slice(i, i + 450)) batch.delete(d.ref);
+        await batch.commit();
+      }
+      await deleteUser(user);
+      render(null);
+      status('Conta excluída. Todos os fichários da nuvem foram apagados.', 'ok');
+    } catch (e) {
+      status(message(e), 'err');
+      $('delete').disabled = !$('confirm').checked;
+    } finally {
+      busy = false;
+      $('signOut').disabled = false;
+    }
+  };
+</script>
 </body>
 </html>
