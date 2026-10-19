@@ -73,7 +73,8 @@
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
   import {
-    getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, deleteUser, inMemoryPersistence, setPersistence,
+    getAuth, GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo, signOut, deleteUser, inMemoryPersistence,
+    setPersistence,
   } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
   import {
     getFirestore, collection, getDocs, writeBatch,
@@ -102,7 +103,7 @@
     $('confirm').checked = false;
     $('delete').disabled = true;
   };
-  onAuthStateChanged(auth, render);
+  render(null);
 
   const message = (e) => {
     switch (e?.code) {
@@ -125,7 +126,17 @@
     busy = true;
     status('');
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
+      const result = await signInWithPopup(auth, new GoogleAuthProvider());
+      // Entrar com o Google cria a conta quando ela não existe. Se foi criada agora, é porque não havia
+      // conta do app com esse e-mail: desfaz na hora, para não deixar uma conta vazia para trás.
+      if (getAdditionalUserInfo(result)?.isNewUser) {
+        const email = result.user.email ?? 'esse e-mail';
+        await deleteUser(result.user).catch(() => signOut(auth));
+        render(null);
+        status(`Não existe conta do Mana Scanner BR com ${email}. Nada foi guardado.`, 'err');
+        return;
+      }
+      render(result.user);
     } catch (e) {
       status(message(e), 'err');
     } finally {
@@ -133,7 +144,7 @@
     }
   };
 
-  $('signOut').onclick = () => { status(''); signOut(auth); };
+  $('signOut').onclick = () => { status(''); signOut(auth); render(null); };
   $('confirm').onchange = (e) => { $('delete').disabled = !e.target.checked; };
 
   $('delete').onclick = async () => {
@@ -153,6 +164,7 @@
         await batch.commit();
       }
       await deleteUser(user);
+      render(null);
       status('Conta excluída. Todos os fichários da nuvem foram apagados.', 'ok');
     } catch (e) {
       status(message(e), 'err');
