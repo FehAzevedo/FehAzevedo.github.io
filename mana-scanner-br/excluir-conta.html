@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Excluir conta — Mana Scanner BR</title>
+  <title>Excluir conta — TCG Scanner BR</title>
   <link rel="stylesheet" href="../style.css">
   <style>
     .box { border: 1px solid color-mix(in srgb, var(--muted) 40%, transparent); border-radius: 14px; padding: 20px; margin: 20px 0; }
@@ -21,10 +21,10 @@
 <body>
 <main>
   <p class="eyebrow">Felipe Jogos Games</p>
-  <h1>Excluir conta — Mana Scanner BR</h1>
+  <h1>Excluir conta — TCG Scanner BR</h1>
   <p class="muted">Última atualização: 19 de outubro de 2026</p>
 
-  <p>A conta do <strong>Mana Scanner BR</strong> é opcional e serve apenas para guardar os seus fichários na nuvem.
+  <p>A conta do <strong>TCG Scanner BR</strong> é opcional e serve apenas para guardar os seus fichários na nuvem.
   Você pode excluí-la a qualquer momento: aqui mesmo, pelo app ou por e-mail.</p>
 
   <h2>Excluir por esta página</h2>
@@ -47,7 +47,7 @@
 
   <h2>Pelo app</h2>
   <ol>
-    <li>Abra o Mana Scanner BR e vá na aba <strong>Conta</strong>.</li>
+    <li>Abra o TCG Scanner BR e vá na aba <strong>Conta</strong>.</li>
     <li>Toque em <strong>Excluir conta</strong> e confirme.</li>
     <li>Entre de novo com a conta Google, se o app pedir, para confirmar que é você.</li>
   </ol>
@@ -132,7 +132,7 @@
         const email = result.user.email ?? 'esse e-mail';
         await deleteUser(result.user).catch(() => signOut(auth));
         render(null);
-        status(`Não existe conta do Mana Scanner BR com ${email}. Nada foi guardado.`, 'err');
+        status(`Não existe conta do TCG Scanner BR com ${email}. Nada foi guardado.`, 'err');
         return;
       }
       render(result.user);
