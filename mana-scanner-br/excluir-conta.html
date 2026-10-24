@@ -86,6 +86,9 @@
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
   import {
+    initializeAppCheck, ReCaptchaEnterpriseProvider,
+  } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app-check.js';
+  import {
     getAuth, GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo, signOut, deleteUser, inMemoryPersistence,
     setPersistence,
   } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
@@ -99,6 +102,11 @@
     authDomain: 'mana-scanner-br.firebaseapp.com',
     projectId: 'mana-scanner-br',
     appId: '1:387167438579:web:be3d229cb8ae7098255986',
+  });
+  // App Check: o Firestore só atende o app e esta página (chave do reCAPTCHA presa ao domínio).
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider('6Lf8__0tAAAAAGiy_PvVR_veYKojGrTYW6TaxQmY'),
+    isTokenAutoRefreshEnabled: true,
   });
   const auth = getAuth(app);
   const db = getFirestore(app);
