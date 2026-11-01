@@ -1,4 +1,5 @@
-# Uma vez por dia lê a ban list do Gym Leader Challenge e atualiza mana-scanner-br/config.json (glcBans).
+# Uma vez por dia lê a ban list do Gym Leader Challenge e as marcas do Standard do Pokémon e atualiza
+# mana-scanner-br/config.json (glcBans e pokemonStandardMarks).
 # Se a página mudar de formato ou o TCGdex não achar uma carta, o script falha e nada é gravado (o GitHub avisa por e-mail).
 name: Ban list do Gym Leader Challenge
 
@@ -19,7 +20,11 @@ jobs:
         with:
           node-version: 22
       - run: node scripts/atualizar-ban-list-glc.mjs
+      # Marcas de regulação do Standard do Pokémon (roda mesmo se a ban list falhar; o job ainda aparece como falho).
+      - run: node scripts/atualizar-marcas-standard-pokemon.mjs
+        if: ${{ !cancelled() }}
       - name: Grava se mudou
+        if: ${{ !cancelled() }}
         run: |
           if git diff --quiet; then
             echo "Sem mudanças."
@@ -27,6 +32,6 @@ jobs:
             git config user.name "ban-list-bot"
             git config user.email "ban-list-bot@users.noreply.github.com"
             git add mana-scanner-br/config.json
-            git commit -m "Ban list do Gym Leader Challenge atualizada"
+            git commit -m "Ban list do Gym Leader Challenge e marcas do Standard atualizadas"
             git push
           fi
