@@ -1,0 +1,32 @@
+# Uma vez por dia lê a ban list do Gym Leader Challenge e atualiza mana-scanner-br/config.json (glcBans).
+# Se a página mudar de formato ou o TCGdex não achar uma carta, o script falha e nada é gravado (o GitHub avisa por e-mail).
+name: Ban list do Gym Leader Challenge
+
+on:
+  schedule:
+    - cron: '17 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/atualizar-ban-list-glc.mjs
+      - name: Grava se mudou
+        run: |
+          if git diff --quiet; then
+            echo "Sem mudanças."
+          else
+            git config user.name "ban-list-bot"
+            git config user.email "ban-list-bot@users.noreply.github.com"
+            git add mana-scanner-br/config.json
+            git commit -m "Ban list do Gym Leader Challenge atualizada"
+            git push
+          fi

@@ -1,3 +1,84 @@
 {
-  "atualizacaoObrigatoria": false
+  "atualizacaoObrigatoria": false,
+  "glcBans": [
+    {
+      "name": "Lysandre's Trump Card",
+      "ids": [
+        "xy4-118",
+        "xy4-99"
+      ]
+    },
+    {
+      "name": "Oranguru",
+      "ids": [
+        "sm5-114"
+      ]
+    },
+    {
+      "name": "Forest of Giant Plants",
+      "ids": [
+        "xy7-74"
+      ]
+    },
+    {
+      "name": "Chip-Chip Ice Axe",
+      "ids": [
+        "sm10-165"
+      ]
+    },
+    {
+      "name": "Hiker",
+      "ids": [
+        "sm7-133",
+        "sma-SV85"
+      ]
+    },
+    {
+      "name": "Kyogre",
+      "ids": [
+        "swsh4.5-21"
+      ]
+    },
+    {
+      "name": "Pokémon Research Lab",
+      "ids": [
+        "sm11-205"
+      ]
+    },
+    {
+      "name": "Raikou",
+      "ids": [
+        "swsh4-50"
+      ]
+    },
+    {
+      "name": "Marshadow",
+      "ids": [
+        "sm3.5-45",
+        "smp-SM85"
+      ]
+    },
+    {
+      "name": "Duskull",
+      "ids": [
+        "sm12-83"
+      ]
+    },
+    {
+      "name": "Double Colorless Energy"
+    },
+    {
+      "name": "Twin Energy",
+      "ids": [
+        "swsh2-174",
+        "swsh2-209"
+      ]
+    },
+    {
+      "name": "Dimension Valley",
+      "ids": [
+        "xy4-93"
+      ]
+    }
+  ]
 }
